@@ -1,4 +1,3 @@
-import { environment } from "@raycast/api";
 import { Pet, type PetState } from "../types";
 import { DECAY_RATES } from "./consts";
 
@@ -64,17 +63,23 @@ export function restPet(state: PetState): PetState {
 
 export function wakeUpPet(state: PetState): PetState {
   // If pet is not sleeping, return the state unchanged
-  if (!state.isSleeping) return state;
+  if (!state.isSleeping || !state.sleepUntil) {
+    return {
+      ...state,
+      isSleeping: false,
+      sleepUntil: undefined,
+    };
+  }
 
   // Calculate how long the pet has been sleeping
   const now = Date.now();
-  const sleepStartTime = state.sleepUntil! - 60 * 60 * 1000; // 1 hour before wake time
+  const sleepStartTime = state.sleepUntil - 60 * 60 * 1000; // 1 hour before wake time
   const sleepDuration = now - sleepStartTime;
   const sleepHours = sleepDuration / (1000 * 60 * 60);
 
-  // Energy recovery is proportional to sleep duration, maximum 40% for full hour
-  // Minimum 5% recovery even if woken immediately
-  const energyRecovery = environment.isDevelopment ? 100 : Math.max(5, Math.min(40, Math.floor(sleepHours * 40)));
+  // Energy recovery is proportional to sleep duration, maximum 50% for full hour
+  // Minimum 10% recovery even if woken immediately
+  const energyRecovery = Math.max(10, Math.min(50, Math.floor(sleepHours * 50)));
 
   // Calculate moodiness from being woken up early
   // The earlier they're woken up, the more moody they get
